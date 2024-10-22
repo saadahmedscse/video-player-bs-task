@@ -12,15 +12,10 @@
     <androidx.media3.ui.PlayerView
         android:id="@+id/exo_player_view"
         android:layout_width="match_parent"
-        app:use_controller="true"
-        app:show_buffering="always"
-        app:show_shuffle_button="true"
-        app:show_subtitle_button="true"
-        app:show_timeout="3000"
-        android:layout_height="@dimen/_160sdp"
+        android:layout_height="@dimen/_200sdp"
         android:background="@drawable/bg_dark_grey_5"
         app:layout_constraintTop_toTopOf="parent"
-        app:resize_mode="fill" />
+        app:resize_mode="zoom"/>
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
