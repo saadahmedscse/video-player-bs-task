@@ -13,11 +13,11 @@ class HomeFragment : BaseFragment<HomeViewModel, FragmentHomeBinding>(FragmentHo
     override val viewmodel: HomeViewModel by viewModels()
 
     private val hlsAdapter by lazy {
-        StreamItemAdapter(::onStreamItemClicked)
+        StreamItemAdapter(onItemClick = ::onStreamItemClicked)
     }
 
     private val dashAdapter by lazy {
-        StreamItemAdapter(::onStreamItemClicked)
+        StreamItemAdapter(onItemClick = ::onStreamItemClicked)
     }
 
     override fun onFragmentCreate(savedInstanceState: Bundle?) {
@@ -33,8 +33,14 @@ class HomeFragment : BaseFragment<HomeViewModel, FragmentHomeBinding>(FragmentHo
     override fun observeData() {
         //
     }
-    
+
     private fun onStreamItemClicked(item: StreamItem) {
-        //
+        sharedViewModel.apply {
+            clearQueue()
+            addToQueue(item)
+        }
+        navigate(
+            destination = R.id.action_homeFragment_to_playerFragment
+        )
     }
 }
