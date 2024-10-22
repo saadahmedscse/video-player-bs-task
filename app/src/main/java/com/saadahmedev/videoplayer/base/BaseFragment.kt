@@ -8,17 +8,22 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.IdRes
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.viewbinding.ViewBinding
 import com.google.android.material.snackbar.Snackbar
+import com.saadahmedev.videoplayer.R
 import com.saadahmedev.videoplayer.ui.CustomToolbarViewModel
+import com.saadahmedev.videoplayer.ui.MainActivityViewModel
+import com.saadahmedev.videoplayer.ui.splash.SplashFragment
 import com.saadahmedev.videoplayer.util.extension.delay
 import com.saadahmedev.videoplayer.util.extension.observe
 
 abstract class BaseFragment<VM : BaseViewModel, BINDING: ViewBinding>(private val bindingInflater: (inflater: LayoutInflater) -> BINDING) : Fragment() {
 
     private val customToolbarViewModel by activityViewModels<CustomToolbarViewModel>()
+    protected val sharedViewModel by activityViewModels<MainActivityViewModel>()
     private lateinit var _binding: BINDING
     protected val binding: BINDING get() = _binding
     protected abstract val toolbarTitle: String?
@@ -48,6 +53,7 @@ abstract class BaseFragment<VM : BaseViewModel, BINDING: ViewBinding>(private va
     ): View {
         customToolbarViewModel.setTitle(toolbarTitle)
         initView()
+        initToolbarBehaviour()
         internalObserver.invoke()
         internalListener.invoke()
         clickListeners()
@@ -71,9 +77,30 @@ abstract class BaseFragment<VM : BaseViewModel, BINDING: ViewBinding>(private va
         }
     }
 
+    private fun initToolbarBehaviour() {
+        val activity = requireActivity()
+
+        if (activity is BaseActivity<*, *>) {
+            when (findNavController().currentDestination?.id) {
+                R.id.splashFragment -> activity.hideToolbar()
+                else -> activity.showToolbar()
+            }
+        }
+    }
+
     protected fun navigate(@IdRes destination: Int, popSelf: Boolean = false) {
-        if (popSelf) findNavController().popBackStack()
-        findNavController().navigate(destination)
+        val navOptions = if (popSelf) {
+            NavOptions.Builder()
+                .setPopUpTo(
+                    findNavController().currentDestination?.id ?: return,
+                    true
+                )
+                .build()
+        } else {
+            null
+        }
+
+        findNavController().navigate(destination, null, navOptions)
     }
 
     protected fun showPopupDialog(

@@ -2,20 +2,29 @@ package com.saadahmedev.videoplayer.ui
 
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.saadahmedev.videoplayer.R
+import com.saadahmedev.videoplayer.base.BaseActivity
+import com.saadahmedev.videoplayer.databinding.ActivityMainBinding
+import com.saadahmedev.videoplayer.databinding.CustomToolbarBinding
 
-class MainActivity : AppCompatActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContentView(R.layout.activity_main)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+class MainActivity : BaseActivity<MainActivityViewModel, ActivityMainBinding>(ActivityMainBinding::inflate) {
+    override val viewmodel: MainActivityViewModel by viewModels()
+    override val customToolbarBinding: CustomToolbarBinding
+        get() = binding.customToolbar
+
+    override fun onActivityCreate(savedInstanceState: Bundle?) {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.main) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+    }
+
+    override fun observeData() {
+        //
     }
 }
