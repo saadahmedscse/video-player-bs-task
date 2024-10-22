@@ -51,4 +51,24 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+
+    // Fragment Navigation
+    implementation(libs.androidx.navigation.fragment.ktx)
+    implementation(libs.androidx.navigation.ui.ktx)
+
+    // SSP-SDP
+    implementation(libs.ssp.android)
+    implementation(libs.sdp.android)
+
+    // Glide
+    implementation(libs.glide)
+
+    // DataStore
+    implementation(libs.androidx.datastore.preferences)
+
+    // Lottie Animation
+    implementation(libs.lottie)
+
+    // Swipe Refresh Layout
+    implementation(libs.swipe.refresh.layout)
 }
