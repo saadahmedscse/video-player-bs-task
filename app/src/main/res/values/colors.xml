@@ -14,6 +14,9 @@
     <color name="static_black">#000000</color>
     <color name="static_transparent">#00000000</color>
 
+    <color name="colorHls">#64A7F4</color>
+    <color name="colorDash">#F46464</color>
+
     <color name="colorBlue">#226DFF</color>
     <color name="colorGreen">#00FF7F</color>
     <color name="colorTransparentGreen">#7500FF7F</color>

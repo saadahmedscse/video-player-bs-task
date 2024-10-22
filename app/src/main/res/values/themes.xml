@@ -6,4 +6,9 @@
     </style>
 
     <style name="Theme.VideoPlayer" parent="Base.Theme.VideoPlayer" />
+
+    <style name="ShapeAppearanceOverlayExtended" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/_5sdp</item>
+    </style>
 </resources>

@@ -5,17 +5,36 @@ import androidx.fragment.app.viewModels
 import com.saadahmedev.videoplayer.R
 import com.saadahmedev.videoplayer.base.BaseFragment
 import com.saadahmedev.videoplayer.databinding.FragmentHomeBinding
+import com.saadahmedev.videoplayer.domain.model.StreamItem
 
 class HomeFragment : BaseFragment<HomeViewModel, FragmentHomeBinding>(FragmentHomeBinding::inflate) {
 
     override val toolbarTitle: String get() = getString(R.string.title_home)
     override val viewmodel: HomeViewModel by viewModels()
 
+    private val hlsAdapter by lazy {
+        StreamItemAdapter(::onStreamItemClicked)
+    }
+
+    private val dashAdapter by lazy {
+        StreamItemAdapter(::onStreamItemClicked)
+    }
+
     override fun onFragmentCreate(savedInstanceState: Bundle?) {
-        //
+        binding.apply {
+            recyclerViewHls.adapter = hlsAdapter
+            recyclerViewDash.adapter = dashAdapter
+        }
+
+        hlsAdapter.addItems(viewmodel.getHLSVideos())
+        dashAdapter.addItems(viewmodel.getDASHVideos())
     }
 
     override fun observeData() {
+        //
+    }
+    
+    private fun onStreamItemClicked(item: StreamItem) {
         //
     }
 }
