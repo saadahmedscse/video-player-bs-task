@@ -20,6 +20,7 @@ class StreamItemAdapter(
 
     override fun onBind(binding: LayoutListVideoItemBinding, item: StreamItem, position: Int) {
         binding.item = item
+        binding.listType = listType
 
         binding.root.setOnClickListener { onItemClick?.invoke(item) }
         binding.btnAction.setOnClickListener { onActionClick?.invoke(item, listType) }

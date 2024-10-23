@@ -4,7 +4,10 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import androidx.core.view.isVisible
+import androidx.databinding.ObservableBoolean
+import androidx.databinding.ObservableField
 import androidx.fragment.app.viewModels
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
@@ -42,22 +45,29 @@ class PlayerFragment :
     }
 
     override fun onFragmentCreate(savedInstanceState: Bundle?) {
-        player = ExoPlayer.Builder(requireContext()).build()
-        player.addListener(this)
-        binding.apply {
-            binding.exoPlayerView.player = player
-            binding.exoPlayerView.clipToOutline = true
+        ExoPlayer.Builder(requireContext()).build().also {
+            player = it
+            it.addListener(this)
 
-            recyclerViewCurrent.adapter = currentQueueAdapter
-            recyclerViewAvailable.adapter = availableQueueAdapter
+            binding.apply {
+                binding.exoPlayerView.player = it
+                binding.exoPlayerView.clipToOutline = true
+
+                recyclerViewCurrent.adapter = currentQueueAdapter
+                recyclerViewAvailable.adapter = availableQueueAdapter
+            }
+
+            sharedViewModel.peekFirstItem()?.link?.let { link -> MediaItem.fromUri(link) }?.also { mediaItem ->
+                player.apply {
+                    setMediaItem(mediaItem)
+                    prepare()
+                    play()
+                }
+            }
         }
 
-        sharedViewModel.peekFirstItem()?.link?.let {
-            loadMediaPreparePlay(it)
-        }
-
-        currentQueueAdapter.addItems(sharedViewModel.getCurrentQueueItemExceptSelf())
-        availableQueueAdapter.addItems(viewmodel.getAvailableItemsExceptQueueItems(sharedViewModel.currentQueue))
+        currentQueueAdapter.addItems(sharedViewModel.getCurrentQueueItems())
+        availableQueueAdapter.addItems(viewmodel.getAvailableItemsExceptQueueItems(sharedViewModel.getCurrentQueueItems()))
     }
 
     override fun observeData() {
@@ -67,26 +77,34 @@ class PlayerFragment :
     private fun onStreamActionClicked(item: StreamItem, listType: ListType) {
         when (listType) {
             ListType.AVAILABLE -> {
+                sharedViewModel.addToQueue(item)
                 availableQueueAdapter.removeItem(item)
                 currentQueueAdapter.addItem(item)
-                sharedViewModel.addToQueue(item)
 
-                MediaItem.fromUri(item.link).also {
-                    player.addMediaItem(it)
-                }
+                player.addMediaItem(MediaItem.fromUri(item.link))
 
                 binding.apply {
                     if (!tvTitleCurrent.isVisible && currentQueueAdapter.itemCount >= 1) {
                         tvTitleCurrent.visible()
                         recyclerViewCurrent.visible()
                     }
+
+                    if (tvTitleAvailable.isVisible && availableQueueAdapter.itemCount == 0) {
+                        tvTitleAvailable.gone()
+                        recyclerViewAvailable.gone()
+                    }
                 }
             }
 
             ListType.QUEUE -> {
+                if (Uri.parse(item.link) == player.currentMediaItem?.localConfiguration?.uri) {
+                    "Cannot remove current video".showSnackBar()
+                    return
+                }
+
+                sharedViewModel.removeFromQueue(item)
                 currentQueueAdapter.removeItem(item)
                 availableQueueAdapter.addItem(item)
-                sharedViewModel.removeFromQueue(item)
 
                 for (i in 0 until player.mediaItemCount) {
                     val mediaItem = player.getMediaItemAt(i)
@@ -96,8 +114,13 @@ class PlayerFragment :
                     }
                 }
 
-                if (currentQueueAdapter.itemCount == 0) {
-                    binding.apply {
+                binding.apply {
+                    if (!tvTitleAvailable.isVisible && availableQueueAdapter.itemCount >= 1) {
+                        tvTitleAvailable.visible()
+                        recyclerViewAvailable.visible()
+                    }
+
+                    if (tvTitleCurrent.isVisible && currentQueueAdapter.itemCount == 0) {
                         tvTitleCurrent.gone()
                         recyclerViewCurrent.gone()
                     }
@@ -108,42 +131,24 @@ class PlayerFragment :
         }
     }
 
-    private fun loadMediaPreparePlay(link: String) {
-        MediaItem.fromUri(link).also {
-            player.apply {
-                setMediaItem(it)
-                prepare()
-                play()
-            }
-        }
-    }
-
-    override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-        if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
-            sharedViewModel.removeFirstItem()?.let {
-                availableQueueAdapter.addItem(it)
-            }
-        }
-    }
+//    override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+//        if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
+//            sharedViewModel.removeFirstItem()?.let {
+//                availableQueueAdapter.addItem(it)
+//            }
+//        }
+//    }
 
     override fun onPlaybackStateChanged(playbackState: Int) {
         when (playbackState) {
             Player.STATE_READY -> {
                 handler.post(updatePositionRunnable)
-                if (currentQueueAdapter.itemCount > 0) currentQueueAdapter.removeItem(0)
 
-                viewmodel.getAvailableItemsExceptQueueItems(sharedViewModel.currentQueue)
-                    .find { player.currentMediaItem?.localConfiguration?.uri == Uri.parse(it.link) }
-                    ?.also {
-                        availableQueueAdapter.removeItem(it)
-                    }
+                sharedViewModel.previousPlayingItem = sharedViewModel.currentlyPlayingItem
+                sharedViewModel.currentlyPlayingItem = sharedViewModel.getCurrentQueueItems().find { player.currentMediaItem?.localConfiguration?.uri == Uri.parse(it.link) }
 
-                binding.apply {
-                    if (tvTitleCurrent.isVisible && currentQueueAdapter.itemCount <= 0) {
-                        tvTitleCurrent.gone()
-                        recyclerViewCurrent.gone()
-                    }
-                }
+                sharedViewModel.previousPlayingItem?.isPlaying?.set(false)
+                sharedViewModel.currentlyPlayingItem?.isPlaying?.set(true)
             }
 
             else -> {}

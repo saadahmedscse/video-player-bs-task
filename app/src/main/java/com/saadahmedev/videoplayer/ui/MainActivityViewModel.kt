@@ -5,7 +5,10 @@ import com.saadahmedev.videoplayer.domain.model.StreamItem
 import java.util.LinkedList
 
 class MainActivityViewModel : BaseViewModel() {
-    val currentQueue: LinkedList<StreamItem> = LinkedList()
+    private val currentQueue: LinkedList<StreamItem> = LinkedList()
+
+    var previousPlayingItem: StreamItem? = null
+    var currentlyPlayingItem: StreamItem? = null
 
     fun clearQueue() {
         currentQueue.clear()
@@ -27,18 +30,8 @@ class MainActivityViewModel : BaseViewModel() {
         return currentQueue.pollFirst()
     }
 
-    fun getCurrentQueueItemExceptSelf(): List<StreamItem> {
-        val list = mutableListOf<StreamItem>()
-
-        val currentItem = peekFirstItem()
-        currentItem?.let {
-            currentQueue.forEach { item ->
-                if (item != it) {
-                    list.add(item)
-                }
-            }
-        }
-
-        return list
+    fun getCurrentQueueItems(): List<StreamItem> {
+        // Passing another list to avoid reflection in the adapter while modifying the main list
+        return arrayListOf<StreamItem>().also { it.addAll(currentQueue) }
     }
 }

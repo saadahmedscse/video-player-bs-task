@@ -15,7 +15,7 @@ abstract class BaseViewModel : ViewModel() {
         _onSwipeRefresh.value = SingleLiveEvent(true)
     }
 
-    fun getHLSVideos(): List<StreamItem> {
+    fun getStreamableVideos(): List<StreamItem> {
         return listOf(
             StreamItem(
                 id = 1,
@@ -40,12 +40,7 @@ abstract class BaseViewModel : ViewModel() {
                 name = "Apple Advanced Stream",
                 link = "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/master.m3u8",
                 type = VideoType.HLS
-            )
-        )
-    }
-
-    fun getDASHVideos(): List<StreamItem> {
-        return listOf(
+            ),
             StreamItem(
                 id = 1,
                 name = "Big Buck Bunny",
@@ -73,19 +68,19 @@ abstract class BaseViewModel : ViewModel() {
         )
     }
 
+    fun getHLSVideos(): List<StreamItem> {
+        return getStreamableVideos().filter { it.type == VideoType.HLS }
+    }
+
+    fun getDASHVideos(): List<StreamItem> {
+        return getStreamableVideos().filter { it.type == VideoType.DASH }
+    }
+
     fun getAvailableItemsExceptQueueItems(queue: List<StreamItem>): List<StreamItem> {
         val list = mutableListOf<StreamItem>()
 
-        getHLSVideos().forEach { item ->
-            if (!queue.contains(item)) {
-                list.add(item)
-            }
-        }
-
-        getDASHVideos().forEach { item ->
-            if (!queue.contains(item)) {
-                list.add(item)
-            }
+        getStreamableVideos().forEach {
+            if (!queue.contains(it)) list.add(it)
         }
 
         return list

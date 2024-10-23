@@ -31,7 +31,7 @@ abstract class BaseRecyclerAdapter<T: Any, VB: ViewDataBinding> : RecyclerView.A
 
     fun addItem(item: T) {
         this.items.add(item)
-        notifyItemInserted(this.items.size - 1)
+        notifyItemInserted(this.items.lastIndex)
     }
 
     fun addItem(position: Int, item: T) {
