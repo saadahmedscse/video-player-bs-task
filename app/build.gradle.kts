@@ -60,17 +60,11 @@ dependencies {
     implementation(libs.ssp.android)
     implementation(libs.sdp.android)
 
-    // Glide
-    implementation(libs.glide)
-
     // DataStore
     implementation(libs.androidx.datastore.preferences)
 
     // Lottie Animation
     implementation(libs.lottie)
-
-    // Swipe Refresh Layout
-    implementation(libs.swipe.refresh.layout)
 
     // Exo Player
     implementation(libs.androidx.media3.exoplayer)

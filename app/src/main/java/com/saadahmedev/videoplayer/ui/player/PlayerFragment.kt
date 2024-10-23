@@ -1,14 +1,15 @@
 package com.saadahmedev.videoplayer.ui.player
 
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
+import android.os.IBinder
 import android.os.Looper
-import android.util.Log
-import android.widget.Toast
 import androidx.core.view.isVisible
-import androidx.databinding.ObservableBoolean
-import androidx.databinding.ObservableField
 import androidx.fragment.app.viewModels
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
@@ -20,10 +21,10 @@ import com.saadahmedev.videoplayer.base.BaseFragment
 import com.saadahmedev.videoplayer.databinding.FragmentPlayerBinding
 import com.saadahmedev.videoplayer.domain.model.ListType
 import com.saadahmedev.videoplayer.domain.model.StreamItem
+import com.saadahmedev.videoplayer.service.VideoPlayerService
 import com.saadahmedev.videoplayer.ui.home.StreamItemAdapter
 import com.saadahmedev.videoplayer.util.extension.gone
 import com.saadahmedev.videoplayer.util.extension.visible
-import java.net.UnknownHostException
 
 class PlayerFragment :
     BaseFragment<PlayerViewModel, FragmentPlayerBinding>(FragmentPlayerBinding::inflate),
@@ -32,7 +33,21 @@ class PlayerFragment :
     override val toolbarTitle: String get() = getString(R.string.media_player)
     override val viewmodel: PlayerViewModel by viewModels()
 
+    private var videoPlayerService: VideoPlayerService? = null
+    private var isBound = false
     private lateinit var player: ExoPlayer
+
+    private val connection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            val binder = service as VideoPlayerService.VideoPlayerBinder
+            videoPlayerService = binder.getService()
+            videoPlayerService?.showNotification()
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            videoPlayerService = null
+        }
+    }
 
     private val currentQueueAdapter by lazy {
         StreamItemAdapter(
@@ -71,6 +86,11 @@ class PlayerFragment :
                 }
             }
         }
+
+        val intent = Intent(requireContext(), VideoPlayerService::class.java)
+        requireContext().startService(intent)
+        requireContext().bindService(intent, connection, Context.BIND_AUTO_CREATE)
+        isBound = true
 
         currentQueueAdapter.addItems(sharedViewModel.getCurrentQueueItems())
         availableQueueAdapter.addItems(viewmodel.getAvailableItemsExceptQueueItems(sharedViewModel.getCurrentQueueItems()))
@@ -176,6 +196,7 @@ class PlayerFragment :
     override fun onPlaybackStateChanged(playbackState: Int) {
         when (playbackState) {
             Player.STATE_READY -> {
+                handler.removeCallbacks(updatePositionRunnable)
                 handler.post(updatePositionRunnable)
 
                 sharedViewModel.previousPlayingItem = sharedViewModel.currentlyPlayingItem
@@ -185,18 +206,8 @@ class PlayerFragment :
                 sharedViewModel.currentlyPlayingItem?.isPlaying?.set(true)
             }
 
-            else -> {}
-        }
-    }
-
-    override fun onPositionDiscontinuity(
-        oldPosition: Player.PositionInfo,
-        newPosition: Player.PositionInfo,
-        reason: Int
-    ) {
-        if (reason == Player.DISCONTINUITY_REASON_SEEK) {
-            newPosition.positionMs.also {
-                saveCurrentPosition(it)
+            Player.STATE_IDLE, Player.STATE_BUFFERING, Player.STATE_ENDED -> {
+                handler.removeCallbacks(updatePositionRunnable)
             }
         }
     }
@@ -206,7 +217,16 @@ class PlayerFragment :
 
     private val updatePositionRunnable = object : Runnable {
         override fun run() {
-            saveCurrentPosition(player.currentPosition)
+            val currentPosition = if (player.currentPosition < player.duration) player.currentPosition else player.duration
+            saveCurrentPosition(if (currentPosition == player.duration) 0 else currentPosition)
+
+            val progress = ((currentPosition * 100).toFloat() / player.duration.toFloat()).toInt()
+            videoPlayerService?.updateNotification(progress)
+
+            if (currentPosition == player.duration) {
+                handler.removeCallbacks(this)
+                return
+            }
             handler.postDelayed(this, updateInterval)
         }
     }
@@ -225,6 +245,13 @@ class PlayerFragment :
 
     override fun onDestroy() {
         super.onDestroy()
+
+        if (isBound) {
+            requireContext().unbindService(connection)
+            isBound = false
+        }
+        videoPlayerService?.stopSelf()
+
         if (::player.isInitialized) {
             player.release()
             handler.removeCallbacks(updatePositionRunnable)
