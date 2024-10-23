@@ -80,7 +80,9 @@ abstract class BaseViewModel : ViewModel() {
         val list = mutableListOf<StreamItem>()
 
         getStreamableVideos().forEach {
-            if (!queue.contains(it)) list.add(it)
+            queue.forEach { item ->
+                if (it.link != item.link) list.add(it)
+            }
         }
 
         return list

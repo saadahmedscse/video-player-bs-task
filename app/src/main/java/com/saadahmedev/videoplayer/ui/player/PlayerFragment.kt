@@ -32,6 +32,7 @@ class PlayerFragment :
 
     private val currentQueueAdapter by lazy {
         StreamItemAdapter(
+            onItemClick = ::onStreamItemClicked,
             onActionClick = ::onStreamActionClicked,
             listType = ListType.QUEUE
         )
@@ -39,6 +40,7 @@ class PlayerFragment :
 
     private val availableQueueAdapter by lazy {
         StreamItemAdapter(
+            onItemClick = ::onStreamItemClicked,
             onActionClick = ::onStreamActionClicked,
             listType = ListType.AVAILABLE
         )
@@ -74,27 +76,26 @@ class PlayerFragment :
         //
     }
 
-    private fun onStreamActionClicked(item: StreamItem, listType: ListType) {
+    private fun onStreamItemClicked(item: StreamItem, listType: ListType, position: Int) {
         when (listType) {
             ListType.AVAILABLE -> {
-                sharedViewModel.addToQueue(item)
-                availableQueueAdapter.removeItem(item)
-                currentQueueAdapter.addItem(item)
-
-                player.addMediaItem(MediaItem.fromUri(item.link))
-
-                binding.apply {
-                    if (!tvTitleCurrent.isVisible && currentQueueAdapter.itemCount >= 1) {
-                        tvTitleCurrent.visible()
-                        recyclerViewCurrent.visible()
-                    }
-
-                    if (tvTitleAvailable.isVisible && availableQueueAdapter.itemCount == 0) {
-                        tvTitleAvailable.gone()
-                        recyclerViewAvailable.gone()
-                    }
-                }
+                addToQueue(item)
             }
+
+            ListType.QUEUE -> {
+                if (position == player.currentMediaItemIndex) return
+
+                player.seekToDefaultPosition(position)
+                player.play()
+            }
+
+            ListType.ALL -> {}
+        }
+    }
+
+    private fun onStreamActionClicked(item: StreamItem, listType: ListType) {
+        when (listType) {
+            ListType.AVAILABLE -> { addToQueue(item) }
 
             ListType.QUEUE -> {
                 if (Uri.parse(item.link) == player.currentMediaItem?.localConfiguration?.uri) {
@@ -102,32 +103,56 @@ class PlayerFragment :
                     return
                 }
 
-                sharedViewModel.removeFromQueue(item)
-                currentQueueAdapter.removeItem(item)
-                availableQueueAdapter.addItem(item)
-
-                for (i in 0 until player.mediaItemCount) {
-                    val mediaItem = player.getMediaItemAt(i)
-                    if (mediaItem.localConfiguration?.uri == Uri.parse(item.link)) {
-                        player.removeMediaItem(i)
-                        break
-                    }
-                }
-
-                binding.apply {
-                    if (!tvTitleAvailable.isVisible && availableQueueAdapter.itemCount >= 1) {
-                        tvTitleAvailable.visible()
-                        recyclerViewAvailable.visible()
-                    }
-
-                    if (tvTitleCurrent.isVisible && currentQueueAdapter.itemCount == 0) {
-                        tvTitleCurrent.gone()
-                        recyclerViewCurrent.gone()
-                    }
-                }
+                removeFromQueue(item)
             }
 
             ListType.ALL -> {}
+        }
+    }
+
+    private fun addToQueue(item: StreamItem) {
+        sharedViewModel.addToQueue(item)
+        availableQueueAdapter.removeItem(item)
+        currentQueueAdapter.addItem(item)
+
+        player.addMediaItem(MediaItem.fromUri(item.link))
+
+        binding.apply {
+            if (!tvTitleCurrent.isVisible && currentQueueAdapter.itemCount >= 1) {
+                tvTitleCurrent.visible()
+                recyclerViewCurrent.visible()
+            }
+
+            if (tvTitleAvailable.isVisible && availableQueueAdapter.itemCount == 0) {
+                tvTitleAvailable.gone()
+                recyclerViewAvailable.gone()
+            }
+        }
+    }
+
+    private fun removeFromQueue(item: StreamItem) {
+        sharedViewModel.removeFromQueue(item)
+        currentQueueAdapter.removeItem(item)
+        availableQueueAdapter.addItem(item)
+
+        for (i in 0 until player.mediaItemCount) {
+            val mediaItem = player.getMediaItemAt(i)
+            if (mediaItem.localConfiguration?.uri == Uri.parse(item.link)) {
+                player.removeMediaItem(i)
+                break
+            }
+        }
+
+        binding.apply {
+            if (!tvTitleAvailable.isVisible && availableQueueAdapter.itemCount >= 1) {
+                tvTitleAvailable.visible()
+                recyclerViewAvailable.visible()
+            }
+
+            if (tvTitleCurrent.isVisible && currentQueueAdapter.itemCount == 0) {
+                tvTitleCurrent.gone()
+                recyclerViewCurrent.gone()
+            }
         }
     }
 

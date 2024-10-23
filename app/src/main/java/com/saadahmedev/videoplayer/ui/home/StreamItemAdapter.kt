@@ -11,7 +11,7 @@ import com.saadahmedev.videoplayer.util.extension.gone
 import com.saadahmedev.videoplayer.util.extension.visible
 
 class StreamItemAdapter(
-    private val onItemClick: ((StreamItem) -> Unit)? = null,
+    private val onItemClick: ((StreamItem, ListType, Int) -> Unit)? = null,
     private val onActionClick: ((StreamItem, ListType) -> Unit)? = null,
     private val listType: ListType = ListType.ALL
 ) : BaseRecyclerAdapter<StreamItem, LayoutListVideoItemBinding>() {
@@ -22,7 +22,7 @@ class StreamItemAdapter(
         binding.item = item
         binding.listType = listType
 
-        binding.root.setOnClickListener { onItemClick?.invoke(item) }
+        binding.root.setOnClickListener { onItemClick?.invoke(item, listType, position) }
         binding.btnAction.setOnClickListener { onActionClick?.invoke(item, listType) }
 
         when (listType) {
