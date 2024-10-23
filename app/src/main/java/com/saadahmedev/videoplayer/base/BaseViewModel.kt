@@ -15,7 +15,7 @@ abstract class BaseViewModel : ViewModel() {
         _onSwipeRefresh.value = SingleLiveEvent(true)
     }
 
-    fun getStreamableVideos(): List<StreamItem> {
+    private fun streamableVideos(): List<StreamItem> {
         return listOf(
             StreamItem(
                 id = 1,
@@ -26,62 +26,50 @@ abstract class BaseViewModel : ViewModel() {
             StreamItem(
                 id = 2,
                 name = "Tears of Steel",
-                link = "https://test-streams.mux.dev/tears-of-steel/playlist.m3u8",
+                link = "https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8",
                 type = VideoType.HLS
             ),
             StreamItem(
                 id = 3,
-                name = "NYC Live Stream",
-                link = "https://video-weaver.jfk02.hls.ttvnw.net/v1/playlist/CpcEYQ9bwrdbHEEYH-wuSg.vwp-b3oUvbzMdAQdBTV3XUbc9n9Ibpkh13GYOT_giYq_lMoOhNrJfHX2RyejWwqEMTO62oKcMWlTkzDXWxuW6dyQUdW6IagkwF8i7BDgeFsbVtN7SpEpOHuJhGUkah1EsA6HE.rM9_NNinZV5S28IVNe5Qo2KnAe7M7PhfbgLeT4lRO7YexdgztMr7A.m3u8",
-                type = VideoType.HLS
-            ),
-            StreamItem(
-                id = 4,
                 name = "Apple Advanced Stream",
                 link = "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/master.m3u8",
                 type = VideoType.HLS
             ),
             StreamItem(
-                id = 1,
-                name = "Big Buck Bunny",
-                link = "https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd",
-                type = VideoType.DASH
-            ),
-            StreamItem(
-                id = 2,
-                name = "Tears of Steel",
-                link = "https://dash.akamaized.net/akamai/elephants_dream/elephants_dream_4k_30fps.mpd",
-                type = VideoType.DASH
-            ),
-            StreamItem(
-                id = 3,
+                id = 4,
                 name = "Envivio",
                 link = "https://dash.akamaized.net/envivio/EnvivioDash3/manifest.mpd",
                 type = VideoType.DASH
             ),
             StreamItem(
-                id = 4,
-                name = "Live Stream Test",
-                link = "https://test-streams.mux.dev/pts_shift/master.mpd",
+                id = 5,
+                name = "Big Buck Bunny",
+                link = "https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd",
+                type = VideoType.DASH
+            ),
+            StreamItem(
+                id = 6,
+                name = "Art of Motion",
+                link = "https://cdn.bitmovin.com/content/assets/art-of-motion-dash-hls-progressive/mpds/f08e80da-bf1d-4e3d-8899-f0f6155f6efa.mpd",
                 type = VideoType.DASH
             )
         )
     }
 
     fun getHLSVideos(): List<StreamItem> {
-        return getStreamableVideos().filter { it.type == VideoType.HLS }
+        return streamableVideos().filter { it.type == VideoType.HLS }
     }
 
     fun getDASHVideos(): List<StreamItem> {
-        return getStreamableVideos().filter { it.type == VideoType.DASH }
+        return streamableVideos().filter { it.type == VideoType.DASH }
     }
 
     fun getAvailableItemsExceptQueueItems(queue: List<StreamItem>): List<StreamItem> {
         val list = mutableListOf<StreamItem>()
 
-        getStreamableVideos().forEach {
+        streamableVideos().forEach {
             queue.forEach { item ->
-                if (it.link != item.link) list.add(it)
+                if (it.id != item.id) list.add(it)
             }
         }
 

@@ -15,7 +15,8 @@
         android:layout_height="@dimen/_200sdp"
         android:background="@drawable/bg_dark_grey_5"
         app:layout_constraintTop_toTopOf="parent"
-        app:resize_mode="zoom"/>
+        app:resize_mode="zoom"
+        app:show_buffering="always" />
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
