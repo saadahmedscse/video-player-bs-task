@@ -223,14 +223,6 @@ class PlayerFragment :
         }
     }
 
-    override fun onStop() {
-        super.onStop()
-        if (::player.isInitialized) {
-            player.release()
-            handler.removeCallbacks(updatePositionRunnable)
-        }
-    }
-
     override fun onDestroy() {
         super.onDestroy()
         if (::player.isInitialized) {
