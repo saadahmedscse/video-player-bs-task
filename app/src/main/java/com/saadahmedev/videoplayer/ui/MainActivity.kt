@@ -1,12 +1,9 @@
 package com.saadahmedev.videoplayer.ui
 
 import android.os.Bundle
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.saadahmedev.videoplayer.R
 import com.saadahmedev.videoplayer.base.BaseActivity
 import com.saadahmedev.videoplayer.databinding.ActivityMainBinding
 import com.saadahmedev.videoplayer.databinding.CustomToolbarBinding

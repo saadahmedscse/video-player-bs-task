@@ -5,12 +5,15 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.databinding.ObservableBoolean
 import androidx.databinding.ObservableField
 import androidx.fragment.app.viewModels
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.datasource.HttpDataSource.HttpDataSourceException
 import androidx.media3.exoplayer.ExoPlayer
 import com.saadahmedev.videoplayer.R
 import com.saadahmedev.videoplayer.base.BaseFragment
@@ -20,6 +23,7 @@ import com.saadahmedev.videoplayer.domain.model.StreamItem
 import com.saadahmedev.videoplayer.ui.home.StreamItemAdapter
 import com.saadahmedev.videoplayer.util.extension.gone
 import com.saadahmedev.videoplayer.util.extension.visible
+import java.net.UnknownHostException
 
 class PlayerFragment :
     BaseFragment<PlayerViewModel, FragmentPlayerBinding>(FragmentPlayerBinding::inflate),
@@ -156,13 +160,18 @@ class PlayerFragment :
         }
     }
 
-//    override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-//        if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
-//            sharedViewModel.removeFirstItem()?.let {
-//                availableQueueAdapter.addItem(it)
-//            }
-//        }
-//    }
+    override fun onPlayerError(error: PlaybackException) {
+        super.onPlayerError(error)
+
+        showPopupDialog(
+            title = "Playback Error!",
+            message = if (error.cause?.javaClass == HttpDataSourceException::class.java) "Unable to load video from remote, please check your internet connection" else error.message ?: "Unable to play current video, please try another",
+            icon = if (error.cause?.javaClass == HttpDataSourceException::class.java) R.drawable.ic_no_internet else R.drawable.ic_error,
+            showNegativeButton = false,
+            cancelable = true,
+            positiveButtonText = "Dismiss"
+        )
+    }
 
     override fun onPlaybackStateChanged(playbackState: Int) {
         when (playbackState) {
@@ -204,6 +213,14 @@ class PlayerFragment :
 
     private fun saveCurrentPosition(position: Long) {
         //
+    }
+
+    override fun onNetworkAvailable() {
+        super.onNetworkAvailable()
+        if (::player.isInitialized) {
+            player.prepare()
+            player.play()
+        }
     }
 
     override fun onStop() {

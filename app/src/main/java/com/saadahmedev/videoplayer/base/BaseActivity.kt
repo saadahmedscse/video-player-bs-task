@@ -11,6 +11,7 @@ import androidx.annotation.DrawableRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.viewbinding.ViewBinding
+import com.google.android.material.snackbar.Snackbar
 import com.saadahmedev.videoplayer.R
 import com.saadahmedev.videoplayer.databinding.CustomToolbarBinding
 import com.saadahmedev.videoplayer.databinding.LayoutPopupDialogBinding
@@ -131,5 +132,9 @@ abstract class BaseActivity<VM: BaseViewModel, BINDING : ViewBinding>(private va
             }
             show()
         }
+    }
+
+    protected fun String.showSnackBar() {
+        Snackbar.make(binding.root, this, Snackbar.LENGTH_SHORT).show()
     }
 }
