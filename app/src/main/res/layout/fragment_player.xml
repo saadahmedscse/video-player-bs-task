@@ -13,8 +13,6 @@
         android:id="@+id/exo_player_view"
         android:layout_width="match_parent"
         android:layout_height="@dimen/_200sdp"
-        app:fullscreen_enter_icon="@drawable/ic_add"
-        app:fullscreen_exit_icon="@drawable/ic_remove"
         android:background="@drawable/bg_dark_grey_5"
         app:layout_constraintTop_toTopOf="parent"
         app:resize_mode="zoom"
