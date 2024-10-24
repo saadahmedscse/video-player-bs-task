@@ -2,7 +2,6 @@ package com.saadahmedev.videoplayer.base
 
 import android.content.Context
 import android.os.Environment
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.saadahmedev.videoplayer.domain.model.StreamItem
 import com.saadahmedev.videoplayer.domain.model.VideoType
@@ -62,8 +61,6 @@ abstract class BaseViewModel : ViewModel() {
         val videoFiles = mutableListOf<StreamItem>()
 
         val savedFileNames = context.getLocalVideoNames()
-
-        Log.d("list_debug", "getOfflineStreams: $savedFileNames")
 
         val files = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
             .listFiles { file -> file.isFile && file.extension.equals("mp4", ignoreCase = true) && savedFileNames.find { file.path == it } != null }

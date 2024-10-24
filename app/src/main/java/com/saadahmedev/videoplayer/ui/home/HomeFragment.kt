@@ -10,7 +10,6 @@ import androidx.fragment.app.viewModels
 import com.saadahmedev.videoplayer.R
 import com.saadahmedev.videoplayer.base.BaseFragment
 import com.saadahmedev.videoplayer.databinding.FragmentHomeBinding
-import com.saadahmedev.videoplayer.domain.model.ListType
 import com.saadahmedev.videoplayer.domain.model.PlayerMode
 import com.saadahmedev.videoplayer.domain.model.StreamItem
 
