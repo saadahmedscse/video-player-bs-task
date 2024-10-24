@@ -105,18 +105,6 @@ class PlayerFragment :
                 player.apply {
                     setMediaItem(mediaItem)
                     prepare()
-
-                    val currentItem = sharedViewModel.getCurrentQueueItems().find { queueItem -> player.currentMediaItem?.localConfiguration?.uri == uri(queueItem) }
-                    val savedCurrentPosition = when (sharedViewModel.playerMode) {
-                        PlayerMode.ONLINE -> {
-                            requireContext().getCurrentVideoPosition(currentItem?.link ?: "")
-                        }
-                        PlayerMode.OFFLINE -> {
-                            requireContext().getCurrentVideoPosition(currentItem?.filePath ?: "")
-                        }
-                    }
-
-                    seekTo(savedCurrentPosition)
                     play()
                 }
             }
@@ -269,6 +257,20 @@ class PlayerFragment :
 
                 sharedViewModel.previousPlayingItem = sharedViewModel.currentlyPlayingItem
                 sharedViewModel.currentlyPlayingItem = sharedViewModel.getCurrentQueueItems().find { player.currentMediaItem?.localConfiguration?.uri == uri(it) }
+
+                if (sharedViewModel.previousPlayingItem != sharedViewModel.currentlyPlayingItem) {
+                    val savedCurrentPosition = when (sharedViewModel.playerMode) {
+                        PlayerMode.ONLINE -> {
+                            requireContext().getCurrentVideoPosition(sharedViewModel.currentlyPlayingItem?.link ?: "")
+                        }
+                        PlayerMode.OFFLINE -> {
+                            requireContext().getCurrentVideoPosition(sharedViewModel.currentlyPlayingItem?.filePath ?: "")
+                        }
+                    }
+
+                    player.seekTo(savedCurrentPosition)
+                    player.play()
+                }
 
                 sharedViewModel.previousPlayingItem?.isPlaying?.set(false)
                 sharedViewModel.currentlyPlayingItem?.isPlaying?.set(true)
