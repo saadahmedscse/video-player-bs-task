@@ -11,6 +11,7 @@ import com.saadahmedev.videoplayer.R
 import com.saadahmedev.videoplayer.base.BaseFragment
 import com.saadahmedev.videoplayer.databinding.FragmentHomeBinding
 import com.saadahmedev.videoplayer.domain.model.ListType
+import com.saadahmedev.videoplayer.domain.model.PlayerMode
 import com.saadahmedev.videoplayer.domain.model.StreamItem
 
 class HomeFragment : BaseFragment<HomeViewModel, FragmentHomeBinding>(FragmentHomeBinding::inflate) {
@@ -42,10 +43,21 @@ class HomeFragment : BaseFragment<HomeViewModel, FragmentHomeBinding>(FragmentHo
         //
     }
 
+    override fun clickListeners() {
+        binding.apply {
+            btnOfflineFiles.setOnClickListener {
+                navigate(
+                    destination = R.id.action_homeFragment_to_downloadListFragment
+                )
+            }
+        }
+    }
+
     private fun onStreamItemClicked(item: StreamItem) {
         sharedViewModel.apply {
             clearQueue()
             addToQueue(item)
+            playerMode = PlayerMode.ONLINE
         }
         navigate(
             destination = R.id.action_homeFragment_to_playerFragment

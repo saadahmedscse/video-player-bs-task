@@ -1,11 +1,13 @@
 package com.saadahmedev.videoplayer.ui
 
 import com.saadahmedev.videoplayer.base.BaseViewModel
+import com.saadahmedev.videoplayer.domain.model.PlayerMode
 import com.saadahmedev.videoplayer.domain.model.StreamItem
 import java.util.LinkedList
 
 class MainActivityViewModel : BaseViewModel() {
     private val currentQueue: LinkedList<StreamItem> = LinkedList()
+    var playerMode: PlayerMode = PlayerMode.ONLINE
 
     var previousPlayingItem: StreamItem? = null
     var currentlyPlayingItem: StreamItem? = null

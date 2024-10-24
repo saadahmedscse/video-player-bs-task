@@ -12,4 +12,5 @@
     <string name="available_streams">Available Streams</string>
     <string name="download_dir">Directory: /storage/emulated/0/Movies/</string>
     <string name="downloading">Downloading...</string>
+    <string name="downloaded_streams">Downloaded Streams</string>
 </resources>

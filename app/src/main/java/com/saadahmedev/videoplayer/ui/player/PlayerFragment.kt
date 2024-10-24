@@ -14,6 +14,7 @@ import android.os.Environment
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.provider.MediaStore.Audio.Media
 import android.provider.Settings
 import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
@@ -33,6 +34,7 @@ import com.saadahmedev.videoplayer.R
 import com.saadahmedev.videoplayer.base.BaseFragment
 import com.saadahmedev.videoplayer.databinding.FragmentPlayerBinding
 import com.saadahmedev.videoplayer.domain.model.ListType
+import com.saadahmedev.videoplayer.domain.model.PlayerMode
 import com.saadahmedev.videoplayer.domain.model.StreamItem
 import com.saadahmedev.videoplayer.domain.model.VideoType
 import com.saadahmedev.videoplayer.service.VideoPlayerService
@@ -96,7 +98,7 @@ class PlayerFragment :
                 recyclerViewAvailable.adapter = availableQueueAdapter
             }
 
-            sharedViewModel.peekFirstItem()?.link?.let { link -> MediaItem.fromUri(link) }?.also { mediaItem ->
+            sharedViewModel.peekFirstItem()?.let { streamItem -> mediaItem(streamItem) }?.also { mediaItem ->
                 player.apply {
                     setMediaItem(mediaItem)
                     prepare()
@@ -111,7 +113,18 @@ class PlayerFragment :
         isBound = true
 
         currentQueueAdapter.addItems(sharedViewModel.getCurrentQueueItems())
-        availableQueueAdapter.addItems(viewmodel.getAvailableItemsExceptQueueItems(sharedViewModel.getCurrentQueueItems()))
+        availableQueueAdapter.addItems(
+            if (sharedViewModel.playerMode == PlayerMode.ONLINE) viewmodel.getAvailableItemsExceptQueueItems(sharedViewModel.getCurrentQueueItems())
+            else viewmodel.getOfflineAvailableItemsExceptQueueItems(sharedViewModel.getCurrentQueueItems())
+        )
+    }
+
+    override fun initView() {
+        if (sharedViewModel.playerMode == PlayerMode.ONLINE) {
+            binding.btnDownload.visible()
+        } else {
+            binding.btnDownload.gone()
+        }
     }
 
     override fun observeData() {
@@ -124,6 +137,18 @@ class PlayerFragment :
                 checkAndRequestPermissions()
             }
         }
+    }
+
+    private fun mediaItem(streamItem: StreamItem): MediaItem? {
+        return if (streamItem.link == null && streamItem.filePath != null) MediaItem.fromUri(
+            streamItem.filePath
+        ) else if (streamItem.link != null) MediaItem.fromUri(streamItem.link) else null
+    }
+
+    private fun uri(streamItem: StreamItem): Uri? {
+        return if (streamItem.link == null && streamItem.filePath != null) Uri.parse(streamItem.filePath) else if (streamItem.link != null) Uri.parse(
+            streamItem.link
+        ) else null
     }
 
     private fun onStreamItemClicked(item: StreamItem, listType: ListType, position: Int) {
@@ -148,7 +173,7 @@ class PlayerFragment :
             ListType.AVAILABLE -> { addToQueue(item) }
 
             ListType.QUEUE -> {
-                if (Uri.parse(item.link) == player.currentMediaItem?.localConfiguration?.uri) {
+                if (uri(item) == player.currentMediaItem?.localConfiguration?.uri) {
                     "Cannot remove current video".showSnackBar()
                     return
                 }
@@ -165,7 +190,9 @@ class PlayerFragment :
         availableQueueAdapter.removeItem(item)
         currentQueueAdapter.addItem(item)
 
-        player.addMediaItem(MediaItem.fromUri(item.link))
+        mediaItem(item)?.let {
+            player.addMediaItem(it)
+        }
 
         binding.apply {
             if (!tvTitleCurrent.isVisible && currentQueueAdapter.itemCount >= 1) {
@@ -187,7 +214,7 @@ class PlayerFragment :
 
         for (i in 0 until player.mediaItemCount) {
             val mediaItem = player.getMediaItemAt(i)
-            if (mediaItem.localConfiguration?.uri == Uri.parse(item.link)) {
+            if (mediaItem.localConfiguration?.uri == uri(item)) {
                 player.removeMediaItem(i)
                 break
             }
@@ -226,7 +253,7 @@ class PlayerFragment :
                 handler.post(updatePositionRunnable)
 
                 sharedViewModel.previousPlayingItem = sharedViewModel.currentlyPlayingItem
-                sharedViewModel.currentlyPlayingItem = sharedViewModel.getCurrentQueueItems().find { player.currentMediaItem?.localConfiguration?.uri == Uri.parse(it.link) }
+                sharedViewModel.currentlyPlayingItem = sharedViewModel.getCurrentQueueItems().find { player.currentMediaItem?.localConfiguration?.uri == uri(it) }
 
                 sharedViewModel.previousPlayingItem?.isPlaying?.set(false)
                 sharedViewModel.currentlyPlayingItem?.isPlaying?.set(true)
@@ -364,11 +391,7 @@ class PlayerFragment :
             }
         }
 
-        val command = if (sharedViewModel.currentlyPlayingItem?.type == VideoType.DASH) {
-            "-y -i $url -c:v mpeg4 -c:a aac -strict experimental -b:a 192k ${outputFile.absolutePath}"
-        } else {
-            "-y -loglevel debug -i $url -c:v copy -c:a aac -b:a 192k -movflags +faststart ${outputFile.absolutePath}"
-        }
+        val command = "-y -i $url -c:v mpeg4 -c:a aac -strict experimental -b:a 192k ${outputFile.absolutePath}"
 
         Log.d("player_debug", "downloadHLSStreamAsMP4: $command")
 

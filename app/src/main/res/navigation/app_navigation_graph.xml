@@ -22,10 +22,22 @@
         <action
             android:id="@+id/action_homeFragment_to_playerFragment"
             app:destination="@id/playerFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_downloadListFragment"
+            app:destination="@id/downloadListFragment" />
     </fragment>
     <fragment
         android:id="@+id/playerFragment"
         android:name="com.saadahmedev.videoplayer.ui.player.PlayerFragment"
         android:label="fragment_player"
         tools:layout="@layout/fragment_player" />
+    <fragment
+        android:id="@+id/downloadListFragment"
+        android:name="com.saadahmedev.videoplayer.ui.download.DownloadListFragment"
+        android:label="fragment_download_list"
+        tools:layout="@layout/fragment_download_list" >
+        <action
+            android:id="@+id/action_downloadListFragment_to_playerFragment"
+            app:destination="@id/playerFragment" />
+    </fragment>
 </navigation>

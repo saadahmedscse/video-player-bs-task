@@ -1,5 +1,6 @@
 package com.saadahmedev.videoplayer.base
 
+import android.os.Environment
 import androidx.lifecycle.ViewModel
 import com.saadahmedev.videoplayer.domain.model.StreamItem
 import com.saadahmedev.videoplayer.domain.model.VideoType
@@ -21,8 +22,8 @@ abstract class BaseViewModel : ViewModel() {
             ),
             StreamItem(
                 id = 3,
-                name = "Apple Advanced Stream",
-                link = "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/master.m3u8",
+                name = "Surveillance Footage",
+                link = "https://playertest.longtailvideo.com/adaptive/issue666/playlists/cisq0gim60007xzvi505emlxx.m3u8",
                 type = VideoType.HLS
             ),
             StreamItem(
@@ -54,10 +55,40 @@ abstract class BaseViewModel : ViewModel() {
         return streamableVideos().filter { it.type == VideoType.DASH }
     }
 
+    fun getOfflineStreams(): List<StreamItem> {
+        val videoFiles = mutableListOf<StreamItem>()
+        val files = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
+            .listFiles { file -> file.isFile && file.extension.equals("mp4", ignoreCase = true) }
+
+        files?.forEachIndexed { index, file ->
+            val streamItem = StreamItem(
+                id = index + 1L,
+                filePath = file.absolutePath,
+                name = file.name,
+                type = VideoType.LOCAL
+            )
+            videoFiles.add(streamItem)
+        }
+
+        return videoFiles
+    }
+
     fun getAvailableItemsExceptQueueItems(queue: List<StreamItem>): List<StreamItem> {
         val list = mutableListOf<StreamItem>()
 
         streamableVideos().forEach {
+            queue.forEach { item ->
+                if (it.id != item.id) list.add(it)
+            }
+        }
+
+        return list
+    }
+
+    fun getOfflineAvailableItemsExceptQueueItems(queue: List<StreamItem>): List<StreamItem> {
+        val list = mutableListOf<StreamItem>()
+
+        getOfflineStreams().forEach {
             queue.forEach { item ->
                 if (it.id != item.id) list.add(it)
             }
