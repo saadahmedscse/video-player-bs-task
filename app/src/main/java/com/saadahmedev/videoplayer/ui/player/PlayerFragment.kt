@@ -71,8 +71,8 @@ class PlayerFragment :
             it.addListener(this)
 
             binding.apply {
-                binding.exoPlayerView.player = it
-                binding.exoPlayerView.clipToOutline = true
+                exoPlayerView.player = it
+                exoPlayerView.clipToOutline = true
 
                 recyclerViewCurrent.adapter = currentQueueAdapter
                 recyclerViewAvailable.adapter = availableQueueAdapter
