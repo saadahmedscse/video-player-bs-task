@@ -30,7 +30,7 @@ class DownloadListFragment : BaseFragment<DownloadListViewModel, FragmentDownloa
 
     override fun onFragmentCreate(savedInstanceState: Bundle?) {
         binding.recyclerView.adapter = adapter
-        adapter.addItems(sharedViewModel.getOfflineStreams())
+        adapter.addItems(sharedViewModel.getOfflineStreams(requireContext()))
     }
 
     override fun observeData() {}

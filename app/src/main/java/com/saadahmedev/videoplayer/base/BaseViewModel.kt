@@ -1,9 +1,12 @@
 package com.saadahmedev.videoplayer.base
 
+import android.content.Context
 import android.os.Environment
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.saadahmedev.videoplayer.domain.model.StreamItem
 import com.saadahmedev.videoplayer.domain.model.VideoType
+import com.saadahmedev.videoplayer.util.extension.getLocalVideoNames
 
 abstract class BaseViewModel : ViewModel() {
     private fun streamableVideos(): List<StreamItem> {
@@ -55,10 +58,15 @@ abstract class BaseViewModel : ViewModel() {
         return streamableVideos().filter { it.type == VideoType.DASH }
     }
 
-    fun getOfflineStreams(): List<StreamItem> {
+    fun getOfflineStreams(context: Context): List<StreamItem> {
         val videoFiles = mutableListOf<StreamItem>()
+
+        val savedFileNames = context.getLocalVideoNames()
+
+        Log.d("list_debug", "getOfflineStreams: $savedFileNames")
+
         val files = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
-            .listFiles { file -> file.isFile && file.extension.equals("mp4", ignoreCase = true) }
+            .listFiles { file -> file.isFile && file.extension.equals("mp4", ignoreCase = true) && savedFileNames.find { file.path == it } != null }
 
         files?.forEachIndexed { index, file ->
             val streamItem = StreamItem(
@@ -85,10 +93,10 @@ abstract class BaseViewModel : ViewModel() {
         return list
     }
 
-    fun getOfflineAvailableItemsExceptQueueItems(queue: List<StreamItem>): List<StreamItem> {
+    fun getOfflineAvailableItemsExceptQueueItems(context: Context, queue: List<StreamItem>): List<StreamItem> {
         val list = mutableListOf<StreamItem>()
 
-        getOfflineStreams().forEach {
+        getOfflineStreams(context).forEach {
             queue.forEach { item ->
                 if (it.id != item.id) list.add(it)
             }

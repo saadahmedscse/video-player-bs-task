@@ -21,6 +21,7 @@ android {
     buildFeatures {
         viewBinding = true
         dataBinding = true
+        buildConfig = true
     }
 
     buildTypes {
@@ -74,4 +75,7 @@ dependencies {
 
     // FFmpeg
     implementation(libs.mobile.ffmpeg.full)
+
+    // Gson
+    implementation (libs.gson)
 }

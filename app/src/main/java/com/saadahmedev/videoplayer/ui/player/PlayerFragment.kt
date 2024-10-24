@@ -14,15 +14,14 @@ import android.os.Environment
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
-import android.provider.MediaStore.Audio.Media
 import android.provider.Settings
-import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -36,12 +35,16 @@ import com.saadahmedev.videoplayer.databinding.FragmentPlayerBinding
 import com.saadahmedev.videoplayer.domain.model.ListType
 import com.saadahmedev.videoplayer.domain.model.PlayerMode
 import com.saadahmedev.videoplayer.domain.model.StreamItem
-import com.saadahmedev.videoplayer.domain.model.VideoType
 import com.saadahmedev.videoplayer.service.VideoPlayerService
 import com.saadahmedev.videoplayer.ui.home.StreamItemAdapter
 import com.saadahmedev.videoplayer.util.DownloadDialog
+import com.saadahmedev.videoplayer.util.extension.getCurrentVideoPosition
+import com.saadahmedev.videoplayer.util.extension.getLocalVideoNames
 import com.saadahmedev.videoplayer.util.extension.gone
+import com.saadahmedev.videoplayer.util.extension.saveCurrentVideoPosition
+import com.saadahmedev.videoplayer.util.extension.saveLocalVideoNames
 import com.saadahmedev.videoplayer.util.extension.visible
+import kotlinx.coroutines.launch
 import java.io.File
 
 
@@ -102,6 +105,18 @@ class PlayerFragment :
                 player.apply {
                     setMediaItem(mediaItem)
                     prepare()
+
+                    val currentItem = sharedViewModel.getCurrentQueueItems().find { queueItem -> player.currentMediaItem?.localConfiguration?.uri == uri(queueItem) }
+                    val savedCurrentPosition = when (sharedViewModel.playerMode) {
+                        PlayerMode.ONLINE -> {
+                            requireContext().getCurrentVideoPosition(currentItem?.link ?: "")
+                        }
+                        PlayerMode.OFFLINE -> {
+                            requireContext().getCurrentVideoPosition(currentItem?.filePath ?: "")
+                        }
+                    }
+
+                    seekTo(savedCurrentPosition)
                     play()
                 }
             }
@@ -115,7 +130,7 @@ class PlayerFragment :
         currentQueueAdapter.addItems(sharedViewModel.getCurrentQueueItems())
         availableQueueAdapter.addItems(
             if (sharedViewModel.playerMode == PlayerMode.ONLINE) viewmodel.getAvailableItemsExceptQueueItems(sharedViewModel.getCurrentQueueItems())
-            else viewmodel.getOfflineAvailableItemsExceptQueueItems(sharedViewModel.getCurrentQueueItems())
+            else viewmodel.getOfflineAvailableItemsExceptQueueItems(requireContext(), sharedViewModel.getCurrentQueueItems())
         )
     }
 
@@ -285,7 +300,15 @@ class PlayerFragment :
     }
 
     private fun saveCurrentPosition(position: Long) {
-        //
+        lifecycleScope.launch {
+            requireContext().saveCurrentVideoPosition(
+                when (sharedViewModel.playerMode) {
+                    PlayerMode.ONLINE -> sharedViewModel.currentlyPlayingItem?.link
+                    PlayerMode.OFFLINE -> sharedViewModel.currentlyPlayingItem?.filePath
+                },
+                position
+            )
+        }
     }
 
     override fun onNetworkAvailable() {
@@ -393,12 +416,11 @@ class PlayerFragment :
 
         val command = "-y -i $url -c:v mpeg4 -c:a aac -strict experimental -b:a 192k ${outputFile.absolutePath}"
 
-        Log.d("player_debug", "downloadHLSStreamAsMP4: $command")
-
         FFmpeg.executeAsync(command) { _, returnCode ->
             when (returnCode) {
                 Config.RETURN_CODE_SUCCESS -> {
                     "Download successful".showSnackBar()
+                    saveVideoIdentifierToLocal(outputFile.absolutePath)
                     downloadDialog?.dismiss()
                 }
                 Config.RETURN_CODE_CANCEL -> {
@@ -410,6 +432,15 @@ class PlayerFragment :
                     downloadDialog?.dismiss()
                 }
             }
+        }
+    }
+
+    private fun saveVideoIdentifierToLocal(path: String) {
+        val localVideos: ArrayList<String> = requireContext().getLocalVideoNames().toCollection(ArrayList())
+        localVideos.add(path)
+
+        lifecycleScope.launch {
+            requireContext().saveLocalVideoNames(localVideos)
         }
     }
 }
