@@ -15,6 +15,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.provider.Settings
+import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
@@ -33,6 +34,7 @@ import com.saadahmedev.videoplayer.base.BaseFragment
 import com.saadahmedev.videoplayer.databinding.FragmentPlayerBinding
 import com.saadahmedev.videoplayer.domain.model.ListType
 import com.saadahmedev.videoplayer.domain.model.StreamItem
+import com.saadahmedev.videoplayer.domain.model.VideoType
 import com.saadahmedev.videoplayer.service.VideoPlayerService
 import com.saadahmedev.videoplayer.ui.home.StreamItemAdapter
 import com.saadahmedev.videoplayer.util.DownloadDialog
@@ -326,7 +328,7 @@ class PlayerFragment :
     }
 
     private fun startDownloading() {
-        val fileName = "${sharedViewModel.currentlyPlayingItem?.name}.mp4"
+        val fileName = "${sharedViewModel.currentlyPlayingItem?.name?.split(" ")?.joinToString("-")}.mp4"
         val outputDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES).toString()
 
         val outputFile = File(outputDir, fileName)
@@ -362,7 +364,13 @@ class PlayerFragment :
             }
         }
 
-        val command = "-y -i $url -c:v mpeg4 -c:a aac -strict experimental -b:a 192k ${outputFile.absolutePath}"
+        val command = if (sharedViewModel.currentlyPlayingItem?.type == VideoType.DASH) {
+            "-y -i $url -c:v mpeg4 -c:a aac -strict experimental -b:a 192k ${outputFile.absolutePath}"
+        } else {
+            "-y -loglevel debug -i $url -c:v copy -c:a aac -b:a 192k -movflags +faststart ${outputFile.absolutePath}"
+        }
+
+        Log.d("player_debug", "downloadHLSStreamAsMP4: $command")
 
         FFmpeg.executeAsync(command) { _, returnCode ->
             when (returnCode) {
