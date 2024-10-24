@@ -15,7 +15,6 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.provider.Settings
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
@@ -27,6 +26,8 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.datasource.HttpDataSource.HttpDataSourceException
 import androidx.media3.exoplayer.ExoPlayer
+import com.arthenica.mobileffmpeg.Config
+import com.arthenica.mobileffmpeg.FFmpeg
 import com.saadahmedev.videoplayer.R
 import com.saadahmedev.videoplayer.base.BaseFragment
 import com.saadahmedev.videoplayer.databinding.FragmentPlayerBinding
@@ -34,8 +35,11 @@ import com.saadahmedev.videoplayer.domain.model.ListType
 import com.saadahmedev.videoplayer.domain.model.StreamItem
 import com.saadahmedev.videoplayer.service.VideoPlayerService
 import com.saadahmedev.videoplayer.ui.home.StreamItemAdapter
+import com.saadahmedev.videoplayer.util.DownloadDialog
 import com.saadahmedev.videoplayer.util.extension.gone
 import com.saadahmedev.videoplayer.util.extension.visible
+import java.io.File
+
 
 class PlayerFragment :
     BaseFragment<PlayerViewModel, FragmentPlayerBinding>(FragmentPlayerBinding::inflate),
@@ -45,6 +49,7 @@ class PlayerFragment :
     override val viewmodel: PlayerViewModel by viewModels()
 
     private var videoPlayerService: VideoPlayerService? = null
+    private var downloadDialog: DownloadDialog? = null
     private var isBound = false
     private lateinit var player: ExoPlayer
 
@@ -321,6 +326,59 @@ class PlayerFragment :
     }
 
     private fun startDownloading() {
-        Toast.makeText(requireContext(), "Start Downloading", Toast.LENGTH_SHORT).show()
+        val fileName = "${sharedViewModel.currentlyPlayingItem?.name}.mp4"
+        val outputDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES).toString()
+
+        val outputFile = File(outputDir, fileName)
+        if (outputFile.exists()) {
+            showPopupDialog(
+                icon = R.drawable.ic_error,
+                title = "Already Exists!",
+                message = "The video you are trying to download is already exists in the local storage. Do you want to download it again?",
+                negativeButtonText = "No",
+                positiveButtonText = "Yes",
+                cancelable = false,
+                positiveButtonAction = {
+                    if (outputFile.delete()) {
+                        downloadHLSStreamAsMP4(sharedViewModel.currentlyPlayingItem?.link, outputFile)
+                    }
+                }
+            )
+        } else {
+            downloadHLSStreamAsMP4(sharedViewModel.currentlyPlayingItem?.link, outputFile)
+        }
+    }
+
+    private fun downloadHLSStreamAsMP4(url: String?, outputFile: File) {
+        if (url.isNullOrBlank()) {
+            "Downloadable url cannot be blank".showSnackBar()
+            return
+        }
+
+        downloadDialog = DownloadDialog.getInstance(requireContext()).also {
+            it.show {
+                FFmpeg.cancel()
+                if (outputFile.exists()) outputFile.delete()
+            }
+        }
+
+        val command = "-y -i $url -c:v mpeg4 -c:a aac -strict experimental -b:a 192k ${outputFile.absolutePath}"
+
+        FFmpeg.executeAsync(command) { _, returnCode ->
+            when (returnCode) {
+                Config.RETURN_CODE_SUCCESS -> {
+                    "Download successful".showSnackBar()
+                    downloadDialog?.dismiss()
+                }
+                Config.RETURN_CODE_CANCEL -> {
+                    "Download cancelled".showSnackBar()
+                    downloadDialog?.dismiss()
+                }
+                else -> {
+                    "Download failed".showSnackBar()
+                    downloadDialog?.dismiss()
+                }
+            }
+        }
     }
 }

@@ -10,4 +10,6 @@
     <string name="media_player">Media Player</string>
     <string name="current_queue">Current Queue</string>
     <string name="available_streams">Available Streams</string>
+    <string name="download_dir">Directory: /storage/emulated/0/Movies/</string>
+    <string name="downloading">Downloading...</string>
 </resources>

@@ -72,6 +72,6 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer.hls)
     implementation(libs.androidx.media3.ui)
 
-    // FFMpeg
+    // FFmpeg
     implementation(libs.mobile.ffmpeg.full)
 }
