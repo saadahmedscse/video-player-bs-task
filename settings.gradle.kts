@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Video Player"
+rootProject.name = "Stream Lab"
 include(":app")
