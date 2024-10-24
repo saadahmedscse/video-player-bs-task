@@ -1,14 +1,25 @@
 package com.saadahmedev.videoplayer.ui.player
 
+import android.Manifest
+import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.provider.Settings
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.viewModels
 import androidx.media3.common.MediaItem
@@ -98,6 +109,14 @@ class PlayerFragment :
 
     override fun observeData() {
         //
+    }
+
+    override fun clickListeners() {
+        binding.apply {
+            btnDownload.setOnClickListener {
+                checkAndRequestPermissions()
+            }
+        }
     }
 
     private fun onStreamItemClicked(item: StreamItem, listType: ListType, position: Int) {
@@ -256,5 +275,52 @@ class PlayerFragment :
             player.release()
             handler.removeCallbacks(updatePositionRunnable)
         }
+    }
+
+    private val storagePermissionLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            startDownloading()
+        }
+    }
+
+    private fun checkAndRequestPermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (Environment.isExternalStorageManager()) startDownloading()
+            else requestManageExternalStoragePermission()
+        } else {
+            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
+                ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+                startDownloading()
+            } else {
+                ActivityCompat.requestPermissions(requireActivity(), arrayOf(
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                ), 999)
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 999 && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            startDownloading()
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun requestManageExternalStoragePermission() {
+        try {
+            val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+            val uri: Uri = Uri.fromParts("package", requireContext().packageName, null)
+            intent.data = uri
+            storagePermissionLauncher.launch(intent)
+        } catch (e: Exception) {
+            val intent = Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
+            storagePermissionLauncher.launch(intent)
+        }
+    }
+
+    private fun startDownloading() {
+        Toast.makeText(requireContext(), "Start Downloading", Toast.LENGTH_SHORT).show()
     }
 }
