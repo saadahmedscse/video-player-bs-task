@@ -342,16 +342,16 @@ class PlayerFragment :
                 cancelable = false,
                 positiveButtonAction = {
                     if (outputFile.delete()) {
-                        downloadHLSStreamAsMP4(sharedViewModel.currentlyPlayingItem?.link, outputFile)
+                        downloadStreamAsMP4(sharedViewModel.currentlyPlayingItem?.link, outputFile)
                     }
                 }
             )
         } else {
-            downloadHLSStreamAsMP4(sharedViewModel.currentlyPlayingItem?.link, outputFile)
+            downloadStreamAsMP4(sharedViewModel.currentlyPlayingItem?.link, outputFile)
         }
     }
 
-    private fun downloadHLSStreamAsMP4(url: String?, outputFile: File) {
+    private fun downloadStreamAsMP4(url: String?, outputFile: File) {
         if (url.isNullOrBlank()) {
             "Downloadable url cannot be blank".showSnackBar()
             return
